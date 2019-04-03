@@ -538,14 +538,12 @@ public class Enhancer extends AbstractClassGenerator
      * @param interfaces the list of interfaces that will be implemented, or null
      * @param methods the list into which to copy the applicable methods
      */
-    public static void getMethods(Class superclass, Class[] interfaces, List methods)
-    {
+    public static void getMethods(Class superclass, Class[] interfaces, List methods) {
         // 使用methods存储方法
         getMethods(superclass, interfaces, methods, null, null);
     }
 
-    private static void getMethods(Class superclass, Class[] interfaces, List methods, List interfaceMethods, Set forcePublic)
-    {
+    private static void getMethods(Class superclass, Class[] interfaces, List methods, List interfaceMethods, Set forcePublic) {
         // 获取父类方法
         ReflectUtils.addAllMethods(superclass, methods);
         List target = (interfaceMethods != null) ? interfaceMethods : methods;
@@ -591,14 +589,18 @@ public class Enhancer extends AbstractClassGenerator
         final Set forcePublic = new HashSet();   //
         getMethods(sc, interfaces, actualMethods, interfaceMethods, forcePublic);
 
+        // method映射转换
         List methods = CollectionUtils.transform(actualMethods, new Transformer() {
             public Object transform(Object value) {
                 Method method = (Method)value;
+                // 为方法签名加上final
                 int modifiers = Constants.ACC_FINAL
                     | (method.getModifiers()
-                       & ~Constants.ACC_ABSTRACT
-                       & ~Constants.ACC_NATIVE
-                       & ~Constants.ACC_SYNCHRONIZED);
+                       & ~Constants.ACC_ABSTRACT // 去除抽象方法
+                       & ~Constants.ACC_NATIVE   // 去除native方法
+                       & ~Constants.ACC_SYNCHRONIZED);  // 去除同步方法
+
+                // 将接口声明过的方法修改为public
                 if (forcePublic.contains(MethodWrapper.create(method))) {
                     modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
                 }
@@ -608,7 +610,7 @@ public class Enhancer extends AbstractClassGenerator
 
         ClassEmitter e = new ClassEmitter(v);
         if (currentData == null) {
-        e.begin_class(Constants.V1_2,
+            e.begin_class(Constants.V1_2,
                       Constants.ACC_PUBLIC,
                       getClassName(),
                       Type.getType(sc),
